@@ -35,7 +35,9 @@ namespace UniGLTF
 
         public List<Vector3> Positions = new List<Vector3>();
         public List<Vector3> Normals = new List<Vector3>();
+#if UNIGLTF_IMPORT_TANGENT
         public List<Vector3> Tangents = new List<Vector3>();
+#endif
     }
 
     public static class UnityExtensions

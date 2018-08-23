@@ -62,13 +62,13 @@ namespace UniGLTF
             // textures
             if (ctx.GLTF.textures != null)
             {
-                for(int i=0; i<ctx.GLTF.textures.Count; ++i)
+                for (int i = 0; i < ctx.GLTF.textures.Count; ++i)
                 {
                     var item = new TextureItem(ctx.GLTF, i, ctx.TextureBaseDir);
                     ctx.AddTexture(item);
                 }
             }
-            foreach(var x in ctx.GetTextures())
+            foreach (var x in ctx.GetTextures())
             {
                 x.Process(ctx.GLTF, ctx.Storage);
             }
@@ -102,7 +102,7 @@ namespace UniGLTF
                 throw new UniGLTFNotSupportedException("draco is not supported");
             }
 
-            for(int i=0; i<ctx.GLTF.meshes.Count; ++i)
+            for (int i = 0; i < ctx.GLTF.meshes.Count; ++i)
             {
                 var meshWithMaterials = ImportMesh(ctx, i);
 
@@ -195,7 +195,9 @@ namespace UniGLTF
             public string name;
             public Vector3[] positions;
             public Vector3[] normals;
+#if UNIGLTF_IMPORT_TANGENT
             public Vector4[] tangents;
+#endif
             public Vector2[] uv;
             public Color[] colors;
             public List<BoneWeight> boneWeights = new List<BoneWeight>();
@@ -268,21 +270,29 @@ namespace UniGLTF
             {
                 mesh.RecalculateNormals();
             }
+
+            if (meshContext.uv != null && meshContext.uv.Length > 0)
+            {
+                mesh.uv = meshContext.uv;
+            }
+
+#if UNIGLTF_IMPORT_TANGENT
             if (meshContext.tangents != null && meshContext.tangents.Length > 0)
             {
                 mesh.tangents = meshContext.tangents;
             }
             else
+#else
             {
 #if UNITY_5_6_OR_NEWER
                 mesh.RecalculateTangents();
+#else
+                Debug.LogWrarning("no tangent");
 #endif
             }
-            if (meshContext.uv != null && meshContext.uv.Length > 0)
-            {
-                mesh.uv = meshContext.uv;
-            }
-            if(meshContext.colors!=null && meshContext.colors.Length > 0)
+#endif
+
+            if (meshContext.colors != null && meshContext.colors.Length > 0)
             {
                 mesh.colors = meshContext.colors;
             }
@@ -356,8 +366,10 @@ namespace UniGLTF
 
             var positions = new List<Vector3>();
             var normals = new List<Vector3>();
-            var tangents = new List<Vector4>();
             var uv = new List<Vector2>();
+#if UNIGLTF_IMPORT_TANGENT
+            var tangents = new List<Vector4>();
+#endif
             var colors = new List<Color>();
             var meshContext = new MeshContext();
             foreach (var prim in gltfMesh.primitives)
@@ -375,10 +387,12 @@ namespace UniGLTF
                     normals.AddRange(ctx.GLTF.GetArrayFromAccessor<Vector3>(prim.attributes.NORMAL).Select(x => x.ReverseZ()));
                 }
 
+#if UNIGLTF_IMPORT_TANGENT
                 if (prim.attributes.TANGENT != -1)
                 {
                     tangents.AddRange(ctx.GLTF.GetArrayFromAccessor<Vector4>(prim.attributes.TANGENT).Select(x => x.ReverseZ()));
                 }
+#endif
 
                 // uv
                 if (prim.attributes.TEXCOORD_0 != -1)
@@ -444,11 +458,13 @@ namespace UniGLTF
                             blendShape.Normals.AddRange(
                                 ctx.GLTF.GetArrayFromAccessor<Vector3>(primTarget.NORMAL).Select(x => x.ReverseZ()).ToArray());
                         }
+#if UNIGLTF_IMPORT_TANGENT
                         if (primTarget.TANGENT != -1)
                         {
                             blendShape.Tangents.AddRange(
                                 ctx.GLTF.GetArrayFromAccessor<Vector3>(primTarget.TANGENT).Select(x => x.ReverseZ()).ToArray());
                         }
+#endif
                         meshContext.blendShapes.Add(blendShape);
                     }
                 }
@@ -458,7 +474,7 @@ namespace UniGLTF
                  ? ctx.GLTF.GetIndices(indexBuffer)
                  : TriangleUtil.FlipTriangle(Enumerable.Range(0, meshContext.positions.Length)).ToArray() // without index array
                  ;
-                for(int i=0; i<indices.Length; ++i)
+                for (int i = 0; i < indices.Length; ++i)
                 {
                     indices[i] += indexOffset;
                 }
@@ -471,7 +487,9 @@ namespace UniGLTF
 
             meshContext.positions = positions.ToArray();
             meshContext.normals = normals.ToArray();
+#if UNIGLTF_IMPORT_TANGENT
             meshContext.tangents = tangents.ToArray();
+#endif
             meshContext.uv = uv.ToArray();
 
             return meshContext;
@@ -492,11 +510,13 @@ namespace UniGLTF
                     context.normals = ctx.GLTF.GetArrayFromAccessor<Vector3>(prim.attributes.NORMAL).SelectInplace(x => x.ReverseZ());
                 }
 
+#if UNIGLTF_IMPORT_TANGENT
                 // tangent
                 if (prim.attributes.TANGENT != -1)
                 {
                     context.tangents = ctx.GLTF.GetArrayFromAccessor<Vector4>(prim.attributes.TANGENT).SelectInplace(x => x.ReverseZ());
                 }
+#endif
 
                 // uv
                 if (prim.attributes.TEXCOORD_0 != -1)
@@ -520,7 +540,7 @@ namespace UniGLTF
                 {
                     var joints0 = ctx.GLTF.GetArrayFromAccessor<UShort4>(prim.attributes.JOINTS_0); // uint4
                     var weights0 = ctx.GLTF.GetArrayFromAccessor<Float4>(prim.attributes.WEIGHTS_0);
-                    for(int i=0; i<weights0.Length; ++i)
+                    for (int i = 0; i < weights0.Length; ++i)
                     {
                         weights0[i] = weights0[i].One();
                     }
@@ -568,11 +588,13 @@ namespace UniGLTF
                             blendShape.Normals.Assign(
                                 ctx.GLTF.GetArrayFromAccessor<Vector3>(primTarget.NORMAL), x => x.ReverseZ());
                         }
+#if UNIGLTF_IMPORT_TANGENT
                         if (primTarget.TANGENT != -1)
                         {
                             blendShape.Tangents.Assign(
                                 ctx.GLTF.GetArrayFromAccessor<Vector3>(primTarget.TANGENT), x => x.ReverseZ());
                         }
+#endif
                     }
                 }
             }
