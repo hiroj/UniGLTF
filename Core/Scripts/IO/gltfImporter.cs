@@ -156,10 +156,10 @@ namespace UniGLTF
                 ctx.Animation = new AnimationClip();
                 ctx.Animation.name = ANIMATION_NAME;
                 ctx.Animation.ClearCurves();
+                ctx.Animation.legacy = true;
 
                 ImportAnimation(ctx, ctx.Animation);
 
-                ctx.Animation.legacy = true;
                 ctx.Animation.name = "legacy";
                 ctx.Animation.wrapMode = WrapMode.Loop;
                 var animation = ctx.Root.AddComponent<Animation>();
